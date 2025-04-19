@@ -18,16 +18,16 @@ func NewVocabularyController(svc *services.VocabularyService) *VocabularyControl
 	}
 }
 
-// GetAll godoc
+// PingExample godoc
 // @Summary Get all vocabulary
+// @Schemes
 // @Description Get all vocabulary
 // @Tags vocabulary
 // @Accept json
 // @Produce json
-// @Success 200 {object} models.Response{data=[]models.Vocabulary}
+// @Success  200 {object} models.Vocabulary
 // @Failure 500 {object} models.Response
-// @Router /vocabulary [get]
-
+// @Router /api/v1/vocabulary [get]
 func (vc *VocabularyController) GetAll(c *fiber.Ctx) error {
 	// Default page = 1 if not provided
 	pageParam := c.Query("page", "1")

@@ -1,8 +1,28 @@
 basePath: /
 definitions:
-  model.HealthResponse:
+  models.Response:
     properties:
+      data: {}
       message:
+        type: string
+      status:
+        type: boolean
+    type: object
+  models.Vocabulary:
+    properties:
+      created_at:
+        type: string
+      english:
+        type: string
+      id:
+        type: string
+      mp3:
+        type: string
+      tag:
+        items:
+          type: string
+        type: array
+      vietnamese:
         type: string
     type: object
 host: localhost:8080
@@ -17,19 +37,23 @@ info:
   title: engractice APIs
   version: "1.0"
 paths:
-  /health:
+  /api/v1/vocabulary:
     get:
       consumes:
       - application/json
-      description: Health check
+      description: Get all vocabulary
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/model.HealthResponse'
-      summary: Health check
+            $ref: '#/definitions/models.Vocabulary'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.Response'
+      summary: Get all vocabulary
       tags:
-      - health
+      - vocabulary
 swagger: "2.0"

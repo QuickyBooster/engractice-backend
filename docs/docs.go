@@ -22,9 +22,9 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/health": {
+        "/api/v1/vocabulary": {
             "get": {
-                "description": "Health check",
+                "description": "Get all vocabulary",
                 "consumes": [
                     "application/json"
                 ],
@@ -32,14 +32,20 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "health"
+                    "vocabulary"
                 ],
-                "summary": "Health check",
+                "summary": "Get all vocabulary",
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/model.HealthResponse"
+                            "$ref": "#/definitions/models.Vocabulary"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
                         }
                     }
                 }
@@ -47,10 +53,40 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "model.HealthResponse": {
+        "models.Response": {
             "type": "object",
             "properties": {
+                "data": {},
                 "message": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "models.Vocabulary": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "english": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "mp3": {
+                    "type": "string"
+                },
+                "tag": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "vietnamese": {
                     "type": "string"
                 }
             }
