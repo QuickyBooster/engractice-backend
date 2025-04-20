@@ -69,7 +69,6 @@ func (vc *VocabularyController) GetAll(c *fiber.Ctx) error {
 // @Router /api/v1/vocabulary/{id} [get]
 func (vc *VocabularyController) GetByID(c *fiber.Ctx) error {
 	id := c.Params("id")
-
 	vocabulary, err := vc.vocabularyService.GetByID(id)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(models.Response{
@@ -147,7 +146,7 @@ func (vc *VocabularyController) Update(c *fiber.Ctx) error {
 		})
 	}
 
-	if _, err := vc.vocabularyService.Update(&id, &vocabulary); err != nil {
+	if _, err := vc.vocabularyService.Update(id, &vocabulary); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(models.Response{
 			Status:  false,
 			Message: "Failed to update vocabulary",
@@ -176,7 +175,7 @@ func (vc *VocabularyController) Update(c *fiber.Ctx) error {
 func (vc *VocabularyController) Delete(c *fiber.Ctx) error {
 	id := c.Params("id")
 
-	if err := vc.vocabularyService.Delete(&id); err != nil {
+	if err := vc.vocabularyService.Delete(id); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(models.Response{
 			Status:  false,
 			Message: "Failed to delete vocabulary",
@@ -206,13 +205,11 @@ func (vc *VocabularyController) Delete(c *fiber.Ctx) error {
 func (vc *VocabularyController) Search(c *fiber.Ctx) error {
 	query := c.Query("query")
 	pageParam := c.Query("page", "1")
-
 	// Convert page to int64
 	page, err := strconv.ParseInt(pageParam, 10, 64)
 	if err != nil || page < 1 {
 		page = 1
 	}
-
 	vocabulary, err := vc.vocabularyService.Search(&query, &page)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(models.Response{

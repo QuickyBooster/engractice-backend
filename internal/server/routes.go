@@ -24,10 +24,10 @@ func (s *FiberServer) RegisterFiberRoutes(vocabulary *controllers.VocabularyCont
 	v1 := s.App.Group("/api/v1")
 	v1.Post("/vocabulary", vocabulary.Create)
 	v1.Get("/vocabulary", vocabulary.GetAll)
+	v1.Get("/vocabulary/search", vocabulary.Search)
 	v1.Get("/vocabulary/:id", vocabulary.GetByID)
 	v1.Put("/vocabulary/:id", vocabulary.Update)
 	v1.Delete("/vocabulary/:id", vocabulary.Delete)
-	v1.Get("/vocabulary/search", vocabulary.Search)
 
 }
 

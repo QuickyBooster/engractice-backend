@@ -44,6 +44,12 @@ clean:
 	@echo "Cleaning..."
 	@rm -f main
 
+swagger:
+	@echo "Generating Swagger documentation..."
+	@swag init -g cmd/api/main.go
+	@echo "Swagger documentation generated at ./docs"
+	@openapi2postmanv2 -s docs/swagger.json  -o docs/postman.json
+
 # Live Reload
 watch:
 	@if command -v air > /dev/null; then \

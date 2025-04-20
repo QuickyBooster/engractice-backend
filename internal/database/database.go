@@ -56,7 +56,6 @@ func (s *ServiceDb) Health() map[string]string {
 func getMongoClient() (*mongo.Client, error) {
 	mongoOnce.Do(func() {
 		connectionString := fmt.Sprintf("mongodb://%s:%s@%s:%s", user, password, host, port)
-		fmt.Println(connectionString)
 		clientInstance, clientInstanceError = mongo.Connect(context.Background(), options.Client().ApplyURI(connectionString))
 		if clientInstanceError != nil {
 			log.Fatalf("Failed to connect to MongoDB: %v", clientInstanceError)
