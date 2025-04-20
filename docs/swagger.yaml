@@ -25,6 +25,19 @@ definitions:
       vietnamese:
         type: string
     type: object
+  models.VocabularyDTO:
+    properties:
+      english:
+        type: string
+      mp3:
+        type: string
+      tag:
+        items:
+          type: string
+        type: array
+      vietnamese:
+        type: string
+    type: object
 host: localhost:8080
 info:
   contact:
@@ -54,6 +67,134 @@ paths:
           schema:
             $ref: '#/definitions/models.Response'
       summary: Get all vocabulary
+      tags:
+      - vocabulary
+    post:
+      consumes:
+      - application/json
+      description: Create a new word
+      parameters:
+      - description: Create a new word
+        in: body
+        name: '{object}'
+        required: true
+        schema:
+          $ref: '#/definitions/models.VocabularyDTO'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.Response'
+      summary: Create a new word
+      tags:
+      - vocabulary
+  /api/v1/vocabulary/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a word
+      parameters:
+      - description: Word ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.Response'
+      summary: Delete a word
+      tags:
+      - vocabulary
+    get:
+      consumes:
+      - application/json
+      description: Get word by ID
+      parameters:
+      - description: Word ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Vocabulary'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.Response'
+      summary: Get word by ID
+      tags:
+      - vocabulary
+    put:
+      consumes:
+      - application/json
+      description: Edit a word
+      parameters:
+      - description: Edit a word
+        in: body
+        name: '{object}'
+        required: true
+        schema:
+          $ref: '#/definitions/models.VocabularyDTO'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.Response'
+      summary: Edit a word
+      tags:
+      - vocabulary
+  /api/v1/vocabulary/search:
+    get:
+      consumes:
+      - application/json
+      description: Search a word
+      parameters:
+      - description: Search query
+        in: query
+        name: query
+        required: true
+        type: string
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.Response'
+      summary: Search a word
       tags:
       - vocabulary
 swagger: "2.0"

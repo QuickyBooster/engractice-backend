@@ -9,19 +9,20 @@ import (
 	"time"
 
 	_ "github.com/joho/godotenv/autoload"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
-
-
 
 type ServiceDb struct {
 	Db *mongo.Client
 }
 
 var (
-	host = os.Getenv("BLUEPRINT_DB_HOST")
-	port = os.Getenv("BLUEPRINT_DB_PORT")
+	host     = os.Getenv("BLUEPRINT_DB_HOST")
+	port     = os.Getenv("BLUEPRINT_DB_PORT")
+	user     = os.Getenv("BLUEPRINT_DB_USERNAME")
+	password = os.Getenv("BLUEPRINT_DB_ROOT_PASSWORD")
 	//database = os.Getenv("BLUEPRINT_DB_DATABASE")
 	clientInstance      *mongo.Client
 	clientInstanceError error
@@ -29,7 +30,7 @@ var (
 )
 
 func New() ServiceDb {
-	client, err := GetMongoClient()
+	client, err := getMongoClient()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -52,12 +53,63 @@ func (s *ServiceDb) Health() map[string]string {
 	}
 }
 
-func GetMongoClient() (*mongo.Client, error) {
+func getMongoClient() (*mongo.Client, error) {
 	mongoOnce.Do(func() {
-		clientInstance, clientInstanceError = mongo.Connect(context.Background(), options.Client().ApplyURI(fmt.Sprintf("mongodb://%s:%s", host, port)))
+		connectionString := fmt.Sprintf("mongodb://%s:%s@%s:%s", user, password, host, port)
+		fmt.Println(connectionString)
+		clientInstance, clientInstanceError = mongo.Connect(context.Background(), options.Client().ApplyURI(connectionString))
 		if clientInstanceError != nil {
 			log.Fatalf("Failed to connect to MongoDB: %v", clientInstanceError)
 		}
+		ensureDatabaseAndCollection(clientInstance)
 	})
 	return clientInstance, clientInstanceError
+}
+
+func ensureDatabaseAndCollection(client *mongo.Client) {
+
+	dbName := os.Getenv("BLUEPRINT_DB_DATABASE")
+	if dbName == "" {
+		log.Fatal("Database name is not set in the environment variable BLUEPRINT_DB_DATABASE")
+	}
+
+	ctx := context.Background()
+	databases, err := client.ListDatabaseNames(ctx, bson.M{})
+	if err != nil {
+		log.Fatalf("Failed to list databases: %v", err)
+	}
+
+	dbExists := false
+	for _, db := range databases {
+		if db == dbName {
+			dbExists = true
+			break
+		}
+	}
+
+	if !dbExists {
+		log.Printf("Database %s does not exist. Creating it...", dbName)
+		client.Database(dbName).CreateCollection(ctx, "vocabulary")
+	}
+
+	collections, err := client.Database(dbName).ListCollectionNames(ctx, bson.M{})
+	if err != nil {
+		log.Fatalf("Failed to list collections: %v", err)
+	}
+
+	collectionExists := false
+	for _, collection := range collections {
+		if collection == "vocabulary" {
+			collectionExists = true
+			break
+		}
+	}
+
+	if !collectionExists {
+		log.Printf("Collection 'vocabulary' does not exist. Creating it...")
+		err = client.Database(dbName).CreateCollection(ctx, "vocabulary")
+		if err != nil {
+			log.Fatalf("Failed to create collection 'vocabulary': %v", err)
+		}
+	}
 }
