@@ -129,7 +129,7 @@ func (v *VocabularyService) Delete(id string) error {
 	return nil
 }
 
-func (v *VocabularyService) Search(query *string, page *int64) ([]models.Vocabulary, error) {
+func (v *VocabularyService) Search(query *string, tag *string, page *int64) ([]models.Vocabulary, error) {
 	collection := v.collection.Db.Database("engractice").Collection("vocabulary")
 
 	findOptions := options.Find().
@@ -141,6 +141,9 @@ func (v *VocabularyService) Search(query *string, page *int64) ([]models.Vocabul
 			{"english": bson.M{"$regex": *query, "$options": "i"}},
 			{"vietnamese": bson.M{"$regex": *query, "$options": "i"}},
 		}}
+	}
+	if tag != nil && *tag != "" {
+		filter["tag"] = bson.M{"$regex": *tag, "$options": "i"}
 	}
 	cursor, err := collection.Find(context.Background(), filter, findOptions)
 	if err != nil {

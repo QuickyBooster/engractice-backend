@@ -177,7 +177,10 @@ paths:
       - description: Search query
         in: query
         name: query
-        required: true
+        type: string
+      - description: Search tag
+        in: query
+        name: tag
         type: string
       - description: Page number
         in: query

@@ -28,6 +28,7 @@ func (s *FiberServer) RegisterFiberRoutes(vocabulary *controllers.VocabularyCont
 	v1.Get("/vocabulary/:id", vocabulary.GetByID)
 	v1.Put("/vocabulary/:id", vocabulary.Update)
 	v1.Delete("/vocabulary/:id", vocabulary.Delete)
+	
 
 }
 
