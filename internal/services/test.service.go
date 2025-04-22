@@ -41,6 +41,7 @@ func (t *TestService) CreateTest(test *models.TestRequest) (models.Test, error) 
 
 	// get the words from database
 	collection := t.collection.Db.Collection(t.collectionTest)
+	collectionVocab := t.collection.Db.Collection(t.collectionVocab)
 	// filter & option
 	filter := bson.M{}
 	option := options.Find()
@@ -49,10 +50,10 @@ func (t *TestService) CreateTest(test *models.TestRequest) (models.Test, error) 
 			"tags": bson.M{"$regex": test.Tags, "$options": "i"},
 		}
 	} else {
-		option.SetMax(test.Quantity).SetSort(bson.M{"created_at": 1})
+		option.SetLimit(int64(test.Quantity)).SetSort(bson.M{"created_at": 1})
 	}
 
-	cursor, err := collection.Find(context.Background(), filter, option)
+	cursor, err := collectionVocab.Find(context.Background(), filter, option)
 	if err != nil {
 		log.Printf("Error searching vocabulary and creating test: %v", err)
 		return models.Test{}, err
@@ -73,6 +74,11 @@ func (t *TestService) CreateTest(test *models.TestRequest) (models.Test, error) 
 			vocabularies[i], vocabularies[j] = vocabularies[j], vocabularies[i]
 		})
 		newTest.Words = vocabularies[:test.Quantity]
+	}
+
+	if _, err := collection.InsertOne(context.Background(), newTest); err != nil {
+		log.Printf("Error creating vocabulary: %v", err)
+		return models.Test{}, err
 	}
 
 	return newTest, nil
