@@ -9,7 +9,7 @@ import (
 	"github.com/gofiber/swagger"
 )
 
-func (s *FiberServer) RegisterFiberRoutes(vocabulary *controllers.VocabularyController) {
+func (s *FiberServer) RegisterFiberRoutes(vocabularyCtl *controllers.VocabularyController,testCtl *controllers.TestController) {
 	// Apply CORS middleware
 	s.App.Use(cors.New(cors.Config{
 		AllowOrigins:     "*",
@@ -22,17 +22,24 @@ func (s *FiberServer) RegisterFiberRoutes(vocabulary *controllers.VocabularyCont
 	s.App.Get("/health", healthHandler)
 
 	v1 := s.App.Group("/api/v1")
-	v1.Post("/vocabulary", vocabulary.Create)
-	v1.Get("/vocabulary", vocabulary.GetAll)
-	v1.Get("/vocabulary/search", vocabulary.Search)
-	v1.Get("/vocabulary/:id", vocabulary.GetByID)
-	v1.Put("/vocabulary/:id", vocabulary.Update)
-	v1.Delete("/vocabulary/:id", vocabulary.Delete)
-	
+	// Register the vocabulary routes
+	vocab := v1.Group("/vocabulary")
+	vocab.Get("/search", vocabularyCtl.Search)
+	vocab.Get("/", vocabularyCtl.GetAll)
+	vocab.Get("/:id", vocabularyCtl.GetByID)
+	vocab.Post("/", vocabularyCtl.Create)
+	vocab.Put("/:id", vocabularyCtl.Update)
+	vocab.Delete("/:id", vocabularyCtl.Delete)
+
+	// Register the test routes
+	test := v1.Group("/test")
+	test.Get("/", testCtl.GetAllTest)
+	test.Post("/finish",testCtl.FinishTest)
+	test.Post("/", testCtl.CreateTest)
 
 }
 
 func healthHandler(c *fiber.Ctx) error {
-	db := database.New()
+	db := database.New("")
 	return c.JSON(db.Health())
 }
