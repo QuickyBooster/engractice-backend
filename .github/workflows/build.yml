@@ -62,5 +62,5 @@ jobs:
         with:
           push: true
           tags: |
-            ghcr.io/${{ vars.DOCKERHUB_USERNAME }}/engractice:latest
-            ghcr.io/${{ vars.DOCKERHUB_USERNAME }}/engractice:${{ needs.bump.outputs.version }}
+            ${{ vars.DOCKERHUB_USERNAME }}/engractice:latest
+            ${{ vars.DOCKERHUB_USERNAME }}/engractice:${{ needs.bump.outputs.version }}
