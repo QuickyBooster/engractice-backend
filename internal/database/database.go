@@ -15,7 +15,8 @@ import (
 )
 
 type ServiceDb struct {
-	Db *mongo.Client
+	Db     *mongo.Database
+	DbName string
 }
 
 var (
@@ -24,18 +25,19 @@ var (
 	user     = os.Getenv("BLUEPRINT_DB_USERNAME")
 	password = os.Getenv("BLUEPRINT_DB_ROOT_PASSWORD")
 	//database = os.Getenv("BLUEPRINT_DB_DATABASE")
-	clientInstance      *mongo.Client
+	clientInstance      *mongo.Database
 	clientInstanceError error
 	mongoOnce           sync.Once
 )
 
-func New() ServiceDb {
-	client, err := getMongoClient()
+func New(dbName string) ServiceDb {
+	client, err := getMongoClient(dbName)
 	if err != nil {
 		log.Fatal(err)
 	}
 	return ServiceDb{
-		Db: client,
+		Db:     client,
+		DbName: dbName,
 	}
 }
 
@@ -43,7 +45,7 @@ func (s *ServiceDb) Health() map[string]string {
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
 
-	err := s.Db.Ping(ctx, nil)
+	err := s.Db.Client().Ping(ctx, nil)
 	if err != nil {
 		log.Fatalf("db down: %v", err)
 	}
@@ -53,21 +55,21 @@ func (s *ServiceDb) Health() map[string]string {
 	}
 }
 
-func getMongoClient() (*mongo.Client, error) {
+func getMongoClient(dbName string) (*mongo.Database, error) {
+	var instance *mongo.Client
 	mongoOnce.Do(func() {
 		connectionString := fmt.Sprintf("mongodb://%s:%s@%s:%s", user, password, host, port)
-		clientInstance, clientInstanceError = mongo.Connect(context.Background(), options.Client().ApplyURI(connectionString))
+		instance, clientInstanceError = mongo.Connect(context.Background(), options.Client().ApplyURI(connectionString))
 		if clientInstanceError != nil {
 			log.Fatalf("Failed to connect to MongoDB: %v", clientInstanceError)
 		}
-		ensureDatabaseAndCollection(clientInstance)
+		ensureDatabaseAndCollection(instance, dbName)
 	})
-	return clientInstance, clientInstanceError
+	return instance.Database(dbName), clientInstanceError
 }
 
-func ensureDatabaseAndCollection(client *mongo.Client) {
+func ensureDatabaseAndCollection(client *mongo.Client, dbName string) {
 
-	dbName := os.Getenv("BLUEPRINT_DB_DATABASE")
 	if dbName == "" {
 		log.Fatal("Database name is not set in the environment variable BLUEPRINT_DB_DATABASE")
 	}
@@ -96,19 +98,29 @@ func ensureDatabaseAndCollection(client *mongo.Client) {
 		log.Fatalf("Failed to list collections: %v", err)
 	}
 
-	collectionExists := false
+	vocabCollection := false
+	testCollection := false
 	for _, collection := range collections {
 		if collection == "vocabulary" {
-			collectionExists = true
-			break
+			vocabCollection = true
+		}
+		if collection == "test" {
+			testCollection = true
 		}
 	}
 
-	if !collectionExists {
+	if !vocabCollection {
 		log.Printf("Collection 'vocabulary' does not exist. Creating it...")
 		err = client.Database(dbName).CreateCollection(ctx, "vocabulary")
 		if err != nil {
 			log.Fatalf("Failed to create collection 'vocabulary': %v", err)
+		}
+	}
+	if !testCollection {
+		log.Printf("Collection 'test' does not exist. Creating it...")
+		err = client.Database(dbName).CreateCollection(ctx, "test")
+		if err != nil {
+			log.Fatalf("Failed to create collection 'test': %v", err)
 		}
 	}
 }

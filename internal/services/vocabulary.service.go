@@ -14,12 +14,14 @@ import (
 )
 
 type VocabularyService struct {
-	collection *database.ServiceDb
+	collection     *database.ServiceDb
+	collectionName string
 }
 
 func NewVocabularyService(db *database.ServiceDb) *VocabularyService {
 	return &VocabularyService{
 		collection: db,
+		collectionName: "vocabulary",
 	}
 }
 
@@ -27,7 +29,7 @@ func (v *VocabularyService) GetAll(page int64) ([]models.Vocabulary, error) {
 	const pageSize int64 = 100
 	skip := (page - 1) * pageSize
 
-	collection := v.collection.Db.Database("engractice").Collection("vocabulary")
+	collection := v.collection.Db.Collection(v.collectionName)
 
 	findOptions := options.Find().
 		SetSkip(skip).
@@ -50,7 +52,7 @@ func (v *VocabularyService) GetAll(page int64) ([]models.Vocabulary, error) {
 }
 
 func (v *VocabularyService) GetByID(id string) (*models.Vocabulary, error) {
-	collection := v.collection.Db.Database("engractice").Collection("vocabulary")
+	collection := v.collection.Db.Collection(v.collectionName)
 
 	var vocabulary models.Vocabulary
 	objectID, err := primitive.ObjectIDFromHex(id)
@@ -69,7 +71,7 @@ func (v *VocabularyService) GetByID(id string) (*models.Vocabulary, error) {
 }
 
 func (v *VocabularyService) Create(vocabulary *models.Vocabulary) (*models.Vocabulary, error) {
-	collection := v.collection.Db.Database("engractice").Collection("vocabulary")
+	collection := v.collection.Db.Collection(v.collectionName)
 
 	vocabulary.ID = primitive.NewObjectID()
 	vocabulary.CreatedAt = time.Now()
@@ -84,7 +86,7 @@ func (v *VocabularyService) Create(vocabulary *models.Vocabulary) (*models.Vocab
 }
 
 func (v *VocabularyService) Update(id string, vocabulary *models.Vocabulary) (*models.Vocabulary, error) {
-	collection := v.collection.Db.Database("engractice").Collection("vocabulary")
+	collection := v.collection.Db.Collection(v.collectionName)
 
 	objectID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
@@ -112,7 +114,7 @@ func (v *VocabularyService) Update(id string, vocabulary *models.Vocabulary) (*m
 }
 
 func (v *VocabularyService) Delete(id string) error {
-	collection := v.collection.Db.Database("engractice").Collection("vocabulary")
+	collection := v.collection.Db.Collection(v.collectionName)
 
 	objectID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
@@ -129,8 +131,8 @@ func (v *VocabularyService) Delete(id string) error {
 	return nil
 }
 
-func (v *VocabularyService) Search(query *string, page *int64) ([]models.Vocabulary, error) {
-	collection := v.collection.Db.Database("engractice").Collection("vocabulary")
+func (v *VocabularyService) Search(query *string, tag *string, page *int64) ([]models.Vocabulary, error) {
+	collection := v.collection.Db.Collection(v.collectionName)
 
 	findOptions := options.Find().
 		SetSkip((*page - 1) * 100).
@@ -141,6 +143,9 @@ func (v *VocabularyService) Search(query *string, page *int64) ([]models.Vocabul
 			{"english": bson.M{"$regex": *query, "$options": "i"}},
 			{"vietnamese": bson.M{"$regex": *query, "$options": "i"}},
 		}}
+	}
+	if tag != nil && *tag != "" {
+		filter["tag"] = bson.M{"$regex": *tag, "$options": "i"}
 	}
 	cursor, err := collection.Find(context.Background(), filter, findOptions)
 	if err != nil {

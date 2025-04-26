@@ -197,20 +197,22 @@ func (vc *VocabularyController) Delete(c *fiber.Ctx) error {
 // @Tags vocabulary
 // @Accept json
 // @Produce json
-// @Param query query string true "Search query"
+// @Param query query string false "Search query"
+// @Param tag query string false "Search tag"
 // @Param page query int false "Page number"
 // @Success  200 {object} models.Response
 // @Failure 500 {object} models.Response
 // @Router /api/v1/vocabulary/search [get]
 func (vc *VocabularyController) Search(c *fiber.Ctx) error {
-	query := c.Query("query")
+	query := c.Query("query", "")
+	tag := c.Query("tag","")
 	pageParam := c.Query("page", "1")
 	// Convert page to int64
 	page, err := strconv.ParseInt(pageParam, 10, 64)
 	if err != nil || page < 1 {
 		page = 1
 	}
-	vocabulary, err := vc.vocabularyService.Search(&query, &page)
+	vocabulary, err := vc.vocabularyService.Search(&query,&tag, &page)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(models.Response{
 			Status:  false,
