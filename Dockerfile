@@ -17,8 +17,9 @@ RUN go build  -o apiserver cmd/api/main.go
 
 FROM scratch
 
+WORKDIR /build
 # Copy binary and config files from /build to root folder of scratch container.
-COPY --from=builder ["/build/apiserver", "/build/.env", "/"]
+COPY --from=builder ["/build/apiserver", "/build"]
 EXPOSE 8080
 # Command to run when starting the container.
 ENTRYPOINT ["/apiserver"]
