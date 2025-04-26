@@ -9,7 +9,7 @@ import (
 	"github.com/gofiber/swagger"
 )
 
-func (s *FiberServer) RegisterFiberRoutes(vocabularyCtl *controllers.VocabularyController,testCtl *controllers.TestController) {
+func (s *FiberServer) RegisterFiberRoutes(vocabularyCtl *controllers.VocabularyController, testCtl *controllers.TestController) {
 	// Apply CORS middleware
 	s.App.Use(cors.New(cors.Config{
 		AllowOrigins:     "*",
@@ -34,7 +34,7 @@ func (s *FiberServer) RegisterFiberRoutes(vocabularyCtl *controllers.VocabularyC
 	// Register the test routes
 	test := v1.Group("/test")
 	test.Get("/", testCtl.GetAllTest)
-	test.Post("/finish",testCtl.FinishTest)
+	test.Post("/finish", testCtl.FinishTest)
 	test.Post("/", testCtl.CreateTest)
 
 }

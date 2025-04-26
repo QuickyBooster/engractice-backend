@@ -123,7 +123,7 @@ func (tc *TestController) FinishTest(c *fiber.Ctx) error {
 		})
 	}
 	test.Date = time.Now()
-	test, err := tc.testService.FinishTest(&test)
+	_, err := tc.testService.FinishTest(&test)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(models.Response{
 			Status:  false,
@@ -135,6 +135,6 @@ func (tc *TestController) FinishTest(c *fiber.Ctx) error {
 	return c.JSON(models.Response{
 		Status:  true,
 		Message: "Success",
-		Data:    test,
+		Data:    nil,
 	})
 }
