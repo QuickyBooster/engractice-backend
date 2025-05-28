@@ -54,19 +54,17 @@ func gracefulShutdown(fiberServer *server.FiberServer, done chan bool) {
 // @BasePath /
 
 func main() {
-	dbName := os.Getenv("BLUEPRINT_DB_DATABASE")
-
 	server := server.New()
 	// db
-	db := database.New(dbName)
+	db := database.NewDatabase()
 
 	// services
-	vocabularyService := services.NewVocabularyService(&db)
-	testService := services.NewTestService(&db,dbName)
+	testService := services.NewTestService(db)
+	vocabularyService := services.NewVocabularyService(db)
 
 	// Controllers
-	vocabularyController := controllers.NewVocabularyController(vocabularyService)
 	testController := controllers.NewTestController(testService)
+	vocabularyController := controllers.NewVocabularyController(vocabularyService)
 
 	// register controller to server
 	server.RegisterFiberRoutes(vocabularyController, testController)

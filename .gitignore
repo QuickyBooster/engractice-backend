@@ -33,3 +33,4 @@ main
 .DS_Store
 
 docker-compose.yml
+credentials.json
