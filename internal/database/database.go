@@ -1,126 +1,87 @@
 package database
 
 import (
-	"context"
+	"engractice/internal/models"
 	"fmt"
 	"log"
 	"os"
-	"sync"
-	"time"
 
 	_ "github.com/joho/godotenv/autoload"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
+	"google.golang.org/api/option"
+	"google.golang.org/api/sheets/v4"
 )
 
-type ServiceDb struct {
-	Db     *mongo.Database
-	DbName string
+type Database struct {
+	sheet *sheets.Service
 }
 
 var (
-	host     = os.Getenv("BLUEPRINT_DB_HOST")
-	port     = os.Getenv("BLUEPRINT_DB_PORT")
-	user     = os.Getenv("BLUEPRINT_DB_USERNAME")
-	password = os.Getenv("BLUEPRINT_DB_ROOT_PASSWORD")
+	spreadsheetId = os.Getenv("SHEET_ID")    //"1_xKMjnfCG3ADEH5nz5JOqvsFsdQ7UVPmc2ZDBtpvoc8"
+	rangeData     = os.Getenv("SHEET_RANGE") //"vocabulary!A2:E"
 	//database = os.Getenv("BLUEPRINT_DB_DATABASE")
-	clientInstance      *mongo.Database
-	clientInstanceError error
-	mongoOnce           sync.Once
+	credentialsFilePath = os.Getenv("CREADENTIALS_FILE_PATH") // "credentials.json"
 )
 
-func New(dbName string) ServiceDb {
-	client, err := getMongoClient(dbName)
+func NewDatabase() *Database {
+	service, err := sheets.NewService(nil, option.WithCredentialsFile(credentialsFilePath))
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("Unable to create Sheets client: %v", err)
 	}
-	return ServiceDb{
-		Db:     client,
-		DbName: dbName,
+	return &Database{
+		sheet: service,
 	}
 }
 
-func (s *ServiceDb) Health() map[string]string {
-	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
-	defer cancel()
-
-	err := s.Db.Client().Ping(ctx, nil)
+func (t *Database) GetSpreadsheetData() ([]models.Vocabulary, error) {
+	resp, err := t.sheet.Spreadsheets.Values.Get(spreadsheetId, rangeData).Do()
 	if err != nil {
-		log.Fatalf("db down: %v", err)
+		return nil, fmt.Errorf("unable to retrieve data from sheet: %v", err)
 	}
-
-	return map[string]string{
-		"message": "It's healthy",
+	if len(resp.Values) == 0 {
+		return nil, fmt.Errorf("no data found in the specified range")
 	}
+	words, err := t.parseSheetData(resp.Values)
+	return words, err
 }
 
-func getMongoClient(dbName string) (*mongo.Database, error) {
-	var instance *mongo.Client
-	mongoOnce.Do(func() {
-		connectionString := fmt.Sprintf("mongodb://%s:%s@%s:%s", user, password, host, port)
-		instance, clientInstanceError = mongo.Connect(context.Background(), options.Client().ApplyURI(connectionString))
-		if clientInstanceError != nil {
-			log.Fatalf("Failed to connect to MongoDB: %v", clientInstanceError)
-		}
-		ensureDatabaseAndCollection(instance, dbName)
-	})
-	return instance.Database(dbName), clientInstanceError
+func (t *Database) UpdateSpreadsheetData(words []models.Vocabulary) error {
+	var vr sheets.ValueRange
+	for _, word := range words {
+		vr.Values = append(vr.Values, []interface{}{
+			word.English,
+			word.Vietnamese,
+			word.MP3,
+			word.Tag,
+			word.Point,
+		})
+	}
+	_, err := t.sheet.Spreadsheets.Values.Update(spreadsheetId, rangeData, &vr).ValueInputOption("RAW").Do()
+	if err != nil {
+		log.Fatalf("Unable to update data in sheet: %v", err)
+	}
+	return nil
 }
 
-func ensureDatabaseAndCollection(client *mongo.Client, dbName string) {
-
-	if dbName == "" {
-		log.Fatal("Database name is not set in the environment variable BLUEPRINT_DB_DATABASE")
-	}
-
-	ctx := context.Background()
-	databases, err := client.ListDatabaseNames(ctx, bson.M{})
-	if err != nil {
-		log.Fatalf("Failed to list databases: %v", err)
-	}
-
-	dbExists := false
-	for _, db := range databases {
-		if db == dbName {
-			dbExists = true
-			break
+func (t *Database) parseSheetData(data [][]interface{}) ([]models.Vocabulary, error) {
+	var words []models.Vocabulary
+	for _, row := range data {
+		if len(row) < 5 {
+			continue
 		}
-	}
-
-	if !dbExists {
-		log.Printf("Database %s does not exist. Creating it...", dbName)
-		client.Database(dbName).CreateCollection(ctx, "vocabulary")
-	}
-
-	collections, err := client.Database(dbName).ListCollectionNames(ctx, bson.M{})
-	if err != nil {
-		log.Fatalf("Failed to list collections: %v", err)
-	}
-
-	vocabCollection := false
-	testCollection := false
-	for _, collection := range collections {
-		if collection == "vocabulary" {
-			vocabCollection = true
+		point := 0
+		if p, ok := row[4].(string); ok {
+			fmt.Sscanf(p, "%d", &point)
 		}
-		if collection == "test" {
-			testCollection = true
-		}
+		words = append(words, models.Vocabulary{
+			English:    fmt.Sprintf("%v", row[0]),
+			Vietnamese: fmt.Sprintf("%v", row[1]),
+			MP3:        fmt.Sprintf("%v", row[2]),
+			Tag:        fmt.Sprintf("%v", row[3]),
+			Point:      point,
+		})
 	}
-
-	if !vocabCollection {
-		log.Printf("Collection 'vocabulary' does not exist. Creating it...")
-		err = client.Database(dbName).CreateCollection(ctx, "vocabulary")
-		if err != nil {
-			log.Fatalf("Failed to create collection 'vocabulary': %v", err)
-		}
+	if len(words) == 0 {
+		panic("No valid words found in the sheet data")
 	}
-	if !testCollection {
-		log.Printf("Collection 'test' does not exist. Creating it...")
-		err = client.Database(dbName).CreateCollection(ctx, "test")
-		if err != nil {
-			log.Fatalf("Failed to create collection 'test': %v", err)
-		}
-	}
+	return words, nil
 }

@@ -20,7 +20,7 @@ func requestLogger(c *fiber.Ctx) error {
 	return err
 }
 
-func (s *FiberServer) RegisterFiberRoutes(vocabularyCtl *controllers.VocabularyController, testCtl *controllers.TestController) {
+func (s *FiberServer) RegisterFiberRoutes(vocabularrCtl *controllers.VocabularyController, testCtl *controllers.TestController) {
 	s.App.Use(requestLogger)
 	// Apply CORS middleware
 	s.App.Use(cors.New(cors.Config{
@@ -31,27 +31,24 @@ func (s *FiberServer) RegisterFiberRoutes(vocabularyCtl *controllers.VocabularyC
 		MaxAge:           300,
 	}))
 	s.App.Get("/swagger/*", swagger.HandlerDefault) // default
-	s.App.Get("/health", healthHandler)
 
 	v1 := s.App.Group("/api/v1")
-	// Register the vocabulary routes
-	vocab := v1.Group("/vocabulary")
-	vocab.Get("/search", vocabularyCtl.Search)
-	vocab.Get("/", vocabularyCtl.GetAll)
-	vocab.Get("/:id", vocabularyCtl.GetByID)
-	vocab.Post("/", vocabularyCtl.Create)
-	vocab.Put("/:id", vocabularyCtl.Update)
-	vocab.Delete("/:id", vocabularyCtl.Delete)
 
 	// Register the test routes
 	test := v1.Group("/test")
-	test.Get("/", testCtl.GetAllTest)
-	test.Post("/finish", testCtl.FinishTest)
 	test.Post("/", testCtl.CreateTest)
+	// Register the vocabulary routes
+	vocabulary := v1.Group("/vocabulary")
+	vocabulary.Get("/", vocabularrCtl.GetVocabulary)
 
 }
 
-func healthHandler(c *fiber.Ctx) error {
-	db := database.New("")
-	return c.JSON(db.Health())
+func ConnectSpreadsheet(c *fiber.Ctx) error {
+	db := database.NewDatabase()
+	if db == nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Failed to connect to the spreadsheet service",
+		})
+	}
+	return c.Status(fiber.StatusOK).JSON("Connected to Google Sheets successfully")
 }
