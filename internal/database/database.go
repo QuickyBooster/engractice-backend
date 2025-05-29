@@ -49,7 +49,6 @@ func (t *Database) UpdateSpreadsheetData(words []models.Vocabulary) error {
 	for _, word := range words {
 		t.Words[word.Order] = word
 		ranger := fmt.Sprintf("vocabulary!A%d:E%d", word.Order+2, word.Order+2) // +2 because the first row is header and we start from row 2
-		var vr sheets.ValueRange
 		myval := []interface{}{
 			word.English,
 			word.Vietnamese,
@@ -57,7 +56,6 @@ func (t *Database) UpdateSpreadsheetData(words []models.Vocabulary) error {
 			word.Tag,
 			word.Point,
 		}
-		vr.Values = append(vr.Values, myval)
 		batch.Data = append(batch.Data, &sheets.ValueRange{
 			Range:  ranger,
 			Values: [][]interface{}{myval},
