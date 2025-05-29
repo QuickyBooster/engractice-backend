@@ -15,6 +15,19 @@ definitions:
       tags:
         type: string
     type: object
+  models.Vocabulary:
+    properties:
+      english:
+        type: string
+      mp3:
+        type: string
+      point:
+        type: integer
+      tag:
+        type: string
+      vietnamese:
+        type: string
+    type: object
 host: localhost:8080
 info:
   contact:
@@ -70,6 +83,33 @@ paths:
           schema:
             $ref: '#/definitions/models.Response'
       summary: Get all vocabulary
+      tags:
+      - vocabulary
+    post:
+      consumes:
+      - application/json
+      description: Upload vocabularies
+      parameters:
+      - description: Vocabulary data
+        in: body
+        name: words
+        required: true
+        schema:
+          items:
+            $ref: '#/definitions/models.Vocabulary'
+          type: array
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.Response'
+      summary: Post vocabulary
       tags:
       - vocabulary
 swagger: "2.0"

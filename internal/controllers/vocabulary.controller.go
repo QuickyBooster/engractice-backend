@@ -44,3 +44,40 @@ func (vc *VocabularyController) GetVocabulary(c *fiber.Ctx) error {
 	})
 
 }
+
+// Test godoc
+// @Summary Post vocabulary
+// @Schemes http https
+// @Description Upload vocabularies
+// @Param words body []models.Vocabulary true "Vocabulary data"
+// @Tags vocabulary
+// @Accept json
+// @Produce json
+// @Success  200 {object} models.Response
+// @Failure 500 {object} models.Response
+// @Router /api/v1/vocabulary [post]
+func (vc *VocabularyController) UpdateVocabulary(c *fiber.Ctx) error {
+	var words []models.Vocabulary
+	if err := c.BodyParser(&words); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(models.Response{
+			Status:  false,
+			Message: "Invalid request body",
+			Data:    nil,
+		})
+	}
+
+	err := vc.vocabularyService.UpdateWords(words)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(models.Response{
+			Status:  false,
+			Message: "Failed to update vocabulary",
+			Data:    nil,
+		})
+	}
+
+	return c.JSON(models.Response{
+		Status:  true,
+		Message: "Vocabulary updated successfully",
+		Data:    nil,
+	})
+}

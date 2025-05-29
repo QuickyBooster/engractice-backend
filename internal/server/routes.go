@@ -40,6 +40,7 @@ func (s *FiberServer) RegisterFiberRoutes(vocabularrCtl *controllers.VocabularyC
 	// Register the vocabulary routes
 	vocabulary := v1.Group("/vocabulary")
 	vocabulary.Get("/", vocabularrCtl.GetVocabulary)
+	vocabulary.Post("/", vocabularrCtl.UpdateVocabulary)
 
 }
 

@@ -89,6 +89,47 @@ const docTemplate = `{
                         }
                     }
                 }
+            },
+            "post": {
+                "description": "Upload vocabularies",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "vocabulary"
+                ],
+                "summary": "Post vocabulary",
+                "parameters": [
+                    {
+                        "description": "Vocabulary data",
+                        "name": "words",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.Vocabulary"
+                            }
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
+                        }
+                    }
+                }
             }
         }
     },
@@ -112,6 +153,26 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "tags": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.Vocabulary": {
+            "type": "object",
+            "properties": {
+                "english": {
+                    "type": "string"
+                },
+                "mp3": {
+                    "type": "string"
+                },
+                "point": {
+                    "type": "integer"
+                },
+                "tag": {
+                    "type": "string"
+                },
+                "vietnamese": {
                     "type": "string"
                 }
             }

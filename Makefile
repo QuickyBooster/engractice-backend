@@ -45,6 +45,8 @@ clean:
 	@rm -f main
 
 swagger:
+# go install github.com/swaggo/swag/cmd/swag@latest
+# (sudo) npm i -g openapi-to-postmanv2
 	@echo "Generating Swagger documentation..."
 	@swag init -g cmd/api/main.go
 	@echo "Swagger documentation generated at ./docs"
