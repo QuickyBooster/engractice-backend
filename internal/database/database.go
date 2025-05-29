@@ -3,23 +3,23 @@ package database
 import (
 	"engractice/internal/models"
 	"fmt"
-	"log"
-	"os"
-
 	_ "github.com/joho/godotenv/autoload"
 	"google.golang.org/api/option"
 	"google.golang.org/api/sheets/v4"
+	"log"
+	"os"
 )
 
 type Database struct {
 	sheet *sheets.Service
+	Words []models.Vocabulary
 }
 
 var (
 	spreadsheetId = os.Getenv("SHEET_ID")    //"1_xKMjnfCG3ADEH5nz5JOqvsFsdQ7UVPmc2ZDBtpvoc8"
 	rangeData     = os.Getenv("SHEET_RANGE") //"vocabulary!A2:E"
 	//database = os.Getenv("BLUEPRINT_DB_DATABASE")
-	credentialsFilePath = os.Getenv("CREADENTIALS_FILE_PATH") // "credentials.json"
+	credentialsFilePath = os.Getenv("CREADENTIALS_FILE_PATH") // "./credentials.json"
 )
 
 func NewDatabase() *Database {
@@ -40,30 +40,40 @@ func (t *Database) GetSpreadsheetData() ([]models.Vocabulary, error) {
 	if len(resp.Values) == 0 {
 		return nil, fmt.Errorf("no data found in the specified range")
 	}
-	words, err := t.parseSheetData(resp.Values)
-	return words, err
+	t.Words, err = t.parseSheetData(resp.Values)
+	return t.Words, err
 }
-
 func (t *Database) UpdateSpreadsheetData(words []models.Vocabulary) error {
-	var vr sheets.ValueRange
+	var batch sheets.BatchUpdateValuesRequest
+	batch.ValueInputOption = "RAW"
 	for _, word := range words {
-		vr.Values = append(vr.Values, []interface{}{
+		t.Words[word.Order] = word
+		ranger := fmt.Sprintf("vocabulary!A%d:E%d", word.Order+2, word.Order+2) // +2 because the first row is header and we start from row 2
+		var vr sheets.ValueRange
+		myval := []interface{}{
 			word.English,
 			word.Vietnamese,
 			word.MP3,
 			word.Tag,
 			word.Point,
+		}
+		vr.Values = append(vr.Values, myval)
+		batch.Data = append(batch.Data, &sheets.ValueRange{
+			Range:  ranger,
+			Values: [][]interface{}{myval},
 		})
 	}
-	_, err := t.sheet.Spreadsheets.Values.Update(spreadsheetId, rangeData, &vr).ValueInputOption("RAW").Do()
+	_, err := t.sheet.Spreadsheets.Values.BatchUpdate(spreadsheetId, &batch).Do()
 	if err != nil {
 		log.Fatalf("Unable to update data in sheet: %v", err)
+		return err
 	}
 	return nil
 }
 
 func (t *Database) parseSheetData(data [][]interface{}) ([]models.Vocabulary, error) {
 	var words []models.Vocabulary
+	i := 0
 	for _, row := range data {
 		if len(row) < 5 {
 			continue
@@ -73,12 +83,14 @@ func (t *Database) parseSheetData(data [][]interface{}) ([]models.Vocabulary, er
 			fmt.Sscanf(p, "%d", &point)
 		}
 		words = append(words, models.Vocabulary{
+			Order:      i,
 			English:    fmt.Sprintf("%v", row[0]),
 			Vietnamese: fmt.Sprintf("%v", row[1]),
 			MP3:        fmt.Sprintf("%v", row[2]),
 			Tag:        fmt.Sprintf("%v", row[3]),
 			Point:      point,
 		})
+		i++
 	}
 	if len(words) == 0 {
 		panic("No valid words found in the sheet data")

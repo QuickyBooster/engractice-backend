@@ -23,11 +23,7 @@ func NewTestService(db *database.Database) *TestService {
 }
 
 func (t *TestService) CreateTest(numberOfWord int, tag string) (models.Test, error) {
-	words, err := t.db.GetSpreadsheetData()
-	if err != nil {
-		log.Printf("ERROR %v", err)
-		return models.Test{}, err
-	}
+	words := t.db.Words
 	test := models.Test{}
 	if tag != "" {
 		rand.Shuffle(len(words), func(i, j int) {
@@ -77,5 +73,9 @@ func (t *TestService) CreateTest(numberOfWord int, tag string) (models.Test, err
 		}
 		log.Printf("INFO Created test (yes tags) with %d words", len(test.Words))
 	}
-	return test, err
+	return test, nil
+}
+
+func (t *TestService) FinishTest(words []models.Vocabulary) error {
+	return t.db.UpdateSpreadsheetData(words)
 }

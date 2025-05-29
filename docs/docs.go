@@ -166,6 +166,10 @@ const docTemplate = `{
                 "mp3": {
                     "type": "string"
                 },
+                "order": {
+                    "description": "Order to remember the position of the word in the list",
+                    "type": "integer"
+                },
                 "point": {
                     "type": "integer"
                 },
